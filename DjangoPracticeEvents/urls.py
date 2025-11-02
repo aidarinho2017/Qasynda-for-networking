@@ -24,4 +24,7 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # optional
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/', include('members.urls')),  # events app
+    path('api/', include('participation.urls')),
+    path('api/', include('comments.urls')),
+    path('api/', include('coins.urls')),
 ]

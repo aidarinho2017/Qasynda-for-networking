@@ -46,6 +46,9 @@ INSTALLED_APPS = [
     'members',
     'users',
     'corsheaders',
+    'coins',
+    'participation',
+    'comments'
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
