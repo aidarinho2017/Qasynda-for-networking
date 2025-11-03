@@ -47,7 +47,7 @@ class Event(models.Model):
                     data["response"]["GeoObjectCollection"]["featureMember"][0]
                     ["GeoObject"]["Point"]["pos"]
                 )
-                lon, lat = map(float, point_str.split())
+                lat, lon = map(float, point_str.split())
                 self.latitude = lat
                 self.longitude = lon
             except Exception as e:

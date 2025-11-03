@@ -4,12 +4,13 @@ from rest_framework.response import Response
 from .models import Participation
 from members.models import Event
 from coins.models import CoinTransaction
+from .serializers import ParticipationSerializer
 
 
 class ParticipationViewSet(viewsets.ModelViewSet):
     queryset = Participation.objects.all()
+    serializer_class = ParticipationSerializer
     permission_classes = [permissions.IsAuthenticated]
-
     def create(self, request, *args, **kwargs):
         event_id = request.data.get("event")
         event = Event.objects.get(id=event_id)

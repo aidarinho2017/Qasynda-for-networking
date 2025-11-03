@@ -8,6 +8,7 @@ class UserProfile(models.Model):
     country = models.CharField(max_length=100, blank=True)
     city = models.CharField(max_length=100, blank=True)
     interests = models.TextField(blank=True, help_text="Comma-separated interests")
+    coins = models.IntegerField(default=0)
 
     def __str__(self):
         return self.user.email or self.user.username
