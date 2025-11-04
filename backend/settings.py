@@ -25,6 +25,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
 load_dotenv()
+print("🚀 DEBUG:", os.getenv("DEBUG"))
+print("🚀 SECRET_KEY present:", bool(os.getenv("SECRET_KEY")))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
