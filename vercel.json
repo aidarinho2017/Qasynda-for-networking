@@ -2,13 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "DjangoPracticeEvents/wsgi.py",
-      "use": "@vercel/python",
-      "config": { "runtime": "python3.9" }
+      "src": "backend/wsgi.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "requirements.txt",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
-    { "src": "/static/(.*)", "dest": "/static/$1" },
-    { "src": "/(.*)", "dest": "DjangoPracticeEvents/wsgi.py" }
+    {
+      "src": "/(.*)",
+      "dest": "backend/wsgi.py"
+    }
   ]
 }
