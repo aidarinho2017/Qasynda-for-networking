@@ -3,17 +3,12 @@
   "builds": [
     {
       "src": "backend/wsgi.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "requirements.txt",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": { "runtime": "python3.9" }
     }
   ],
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "backend/wsgi.py"
-    }
+    { "src": "/static/(.*)", "dest": "/static/$1" },
+    { "src": "/(.*)", "dest": "backend/wsgi.py" }
   ]
 }
