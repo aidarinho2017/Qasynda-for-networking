@@ -2,29 +2,17 @@
   "version": 2,
   "builds": [
     {
-      "src": "DjangoPracticeEvents/wsgi.py",
-      "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.9",
-        "maxLambdaSize": "15mb"
-      }
+      "src": "DjangoPracticeEvents/DjangoPracticeEvents/wsgi.py",
+      "use": "@vercel/python"
     },
     {
       "src": "build_files.sh",
       "use": "@vercel/static-build",
-      "config": {
-        "distDir": "staticfiles"
-      }
+      "config": { "distDir": "staticfiles" }
     }
   ],
   "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "DjangoPracticeEvents/wsgi.py"
-    }
+    { "src": "/static/(.*)", "dest": "/static/$1" },
+    { "src": "/(.*)", "dest": "DjangoPracticeEvents/DjangoPracticeEvents/wsgi.py" }
   ]
 }
