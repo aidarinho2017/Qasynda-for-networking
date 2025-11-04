@@ -47,7 +47,7 @@ class Event(models.Model):
                     data["response"]["GeoObjectCollection"]["featureMember"][0]
                     ["GeoObject"]["Point"]["pos"]
                 )
-                lat, lon = map(float, point_str.split())
+                lon, lat = map(float, point_str.split())
                 self.latitude = lat
                 self.longitude = lon
             except Exception as e:
@@ -70,3 +70,5 @@ class Recommendation(models.Model):
     interest = models.CharField(max_length=100)
     reason = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+
