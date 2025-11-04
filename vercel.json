@@ -2,18 +2,15 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/wsgi.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "requirements.txt",
-      "use": "@vercel/python"
+      "src": "DjangoPracticeEvents/wsgi.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb"
+      }
     }
   ],
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "backend/wsgi.py"
-    }
+    { "src": "/static/(.*)", "dest": "/static/$1" },
+    { "src": "/(.*)", "dest": "DjangoPracticeEvents/wsgi.py" }
   ]
 }
