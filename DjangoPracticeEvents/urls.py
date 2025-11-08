@@ -27,4 +27,5 @@ urlpatterns = [
     path('api/', include('participation.urls')),
     path('api/', include('comments.urls')),
     path('api/', include('coins.urls')),
+    path('api/', include('items.urls')),
 ]

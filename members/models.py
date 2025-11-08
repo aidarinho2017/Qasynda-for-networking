@@ -61,14 +61,3 @@ class Event(models.Model):
     def __str__(self):
         return f"{self.title} ({self.date})"
 
-
-class Interests(models.Model):
-    interests = models.CharField(max_length=500)
-
-class Recommendation(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.CASCADE)
-    interest = models.CharField(max_length=100)
-    reason = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
