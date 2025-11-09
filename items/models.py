@@ -2,7 +2,6 @@
 from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
-from django.urls import reverse
 import hashlib
 import urllib.parse
 
@@ -30,11 +29,17 @@ class Item(models.Model):
         ("item", "Item"),
     ]
 
+    STATUS_CHOICES = [
+        ("in_sell", "In Sell"),
+        ("soon", "Soon"),
+    ]
+
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="item")
     cost = models.IntegerField(default=0)  # price in qasynda_coins
     available_quantity = models.PositiveIntegerField(default=0)  # remaining supply
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="in_sell", null=True, blank=True)
     image_url = models.CharField(max_length=500, blank=True, help_text="Auto-generated if empty.")
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -46,12 +51,27 @@ class Item(models.Model):
         return f"{self.name} ({self.type})"
 
     def save(self, *args, **kwargs):
-        # If image_url is empty, generate deterministic image URL using name+id (id may be None before first save)
+        is_new = self.pk is None
+        if self.pk:
+            try:
+                old_item = Item.objects.get(pk=self.pk)
+                if old_item.cost != self.cost:
+                    try:
+                        ItemPriceHistory.objects.create(item=self, price=self.cost)
+                    except Exception:
+                        pass
+            except Item.DoesNotExist:
+                pass
+        elif is_new:
+            try:
+                ItemPriceHistory.objects.create(item=self, price=self.cost)
+            except Exception:
+                pass
+
         if not self.image_url:
             seed = self.name
-            # If object already has a primary key include it to further diversify
             if self.pk:
-                seed = f"{seed}-{self.pk}"
+                seed = f"{self.pk}"
             self.image_url = deterministic_image_url(seed)
         super().save(*args, **kwargs)
 
@@ -155,3 +175,80 @@ class UserItem(models.Model):
 
     def __str__(self):
         return f"{self.user.username} — {self.item.name} x{self.quantity}"
+
+    def list_for_sale(self, quantity, price_per_unit):
+        if self.quantity < quantity:
+            return {"success": False, "message": "Not enough items"}
+        ItemListing.objects.create(seller=self.user, item=self.item, quantity=quantity, price_per_unit=price_per_unit)
+        self.quantity -= quantity
+        if self.quantity == 0:
+            self.delete()
+        else:
+            self.save()
+        return {"success": True, "message": "Listed for sale"}
+
+
+class ItemPriceHistory(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="price_history")
+    price = models.IntegerField()
+    changed_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-changed_at"]
+
+    def __str__(self):
+        return f"{self.item.name}: {self.price} at {self.changed_at}"
+
+
+class ItemListing(models.Model):
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="listings")
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    price_per_unit = models.IntegerField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.seller.username} sells {self.item.name} x{self.quantity} for {self.price_per_unit} each"
+
+    def buy_from_listing(self, buyer, quantity):
+        from coins.models import CoinTransaction
+        from users.models import UserProfile
+
+        if quantity <= 0 or quantity > self.quantity:
+            return {"success": False, "message": "Invalid quantity"}
+
+        total_cost = self.price_per_unit * quantity
+
+        with transaction.atomic():
+            buyer_profile = UserProfile.objects.select_for_update().get(user=buyer)
+            seller_profile = UserProfile.objects.select_for_update().get(user=self.seller)
+
+            if buyer_profile.coins < total_cost:
+                return {"success": False, "message": "Insufficient coins"}
+
+            # Transfer coins
+            buyer_profile.coins -= total_cost
+            seller_profile.coins += total_cost
+            buyer_profile.save()
+            seller_profile.save()
+
+            # Record transactions
+            CoinTransaction.objects.create(user=buyer, amount=-total_cost, reason="PARTICIPATE")  # or new reason
+            CoinTransaction.objects.create(user=self.seller, amount=total_cost, reason="PARTICIPATE")
+
+            # Add to buyer's inventory
+            buyer_item, _ = UserItem.objects.get_or_create(user=buyer, item=self.item)
+            buyer_item.quantity += quantity
+            buyer_item.save()
+
+            # Update listing
+            self.quantity -= quantity
+            if self.quantity == 0:
+                self.delete()
+            else:
+                self.save()
+
+            return {"success": True, "message": "Purchased from listing", "coins": buyer_profile.coins}

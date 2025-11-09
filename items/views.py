@@ -5,8 +5,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
-from .models import Item, UserItem
-from .serializers import ItemSerializer, UserItemSerializer
+from .models import Item, UserItem, ItemListing
+from .serializers import ItemSerializer, UserItemSerializer, ItemListingSerializer
 
 
 class ItemViewSet(viewsets.ModelViewSet):
@@ -36,6 +36,8 @@ class ItemViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="buy")
     def buy(self, request, pk=None):
         item = get_object_or_404(Item, pk=pk)
+        if getattr(item, 'status', 'in_sell') == 'soon':
+            return Response({"success": False, "message": "Item is not available for purchase yet"}, status=status.HTTP_400_BAD_REQUEST)
         qty = int(request.data.get("quantity", 1))
         result = item.buy(request.user, quantity=qty)
         if result.get("success"):
@@ -67,3 +69,37 @@ class UserItemViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return UserItem.objects.filter(user=self.request.user).select_related("item")
+
+    @action(detail=True, methods=["post"], url_path="list")
+    def list_for_sale(self, request, pk=None):
+        user_item = get_object_or_404(UserItem, pk=pk, user=request.user)
+        qty = int(request.data.get("quantity", 1))
+        price = int(request.data.get("price_per_unit", 0))
+        result = user_item.list_for_sale(quantity=qty, price_per_unit=price)
+        if result.get("success"):
+            return Response(result)
+        return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ItemListingViewSet(viewsets.ModelViewSet):
+    """
+    /api/listings/           GET list, POST create
+    /api/listings/{pk}/      GET retrieve, PUT/PATCH/DELETE
+    Actions:
+      POST /api/listings/{pk}/buy/   -> buy from listing
+    """
+    queryset = ItemListing.objects.all()
+    serializer_class = ItemListingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(seller=self.request.user)
+
+    @action(detail=True, methods=["post"], url_path="buy")
+    def buy(self, request, pk=None):
+        listing = get_object_or_404(ItemListing, pk=pk)
+        qty = int(request.data.get("quantity", 1))
+        result = listing.buy_from_listing(request.user, quantity=qty)
+        if result.get("success"):
+            return Response(result)
+        return Response(result, status=status.HTTP_400_BAD_REQUEST)
