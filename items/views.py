@@ -7,6 +7,8 @@ from django.shortcuts import get_object_or_404
 
 from .models import Item, UserItem, ItemListing
 from .serializers import ItemSerializer, UserItemSerializer, ItemListingSerializer
+from marketplace.models import Listing
+from marketplace.serializers import ListingSerializer
 
 
 class ItemViewSet(viewsets.ModelViewSet):
@@ -92,6 +94,9 @@ class ItemListingViewSet(viewsets.ModelViewSet):
     serializer_class = ItemListingSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        return ItemListing.objects.select_related('seller', 'item').exclude(seller=self.request.user)
+
     def perform_create(self, serializer):
         serializer.save(seller=self.request.user)
 
@@ -103,3 +108,17 @@ class ItemListingViewSet(viewsets.ModelViewSet):
         if result.get("success"):
             return Response(result)
         return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MyListingsViewSet(viewsets.ModelViewSet):
+    """
+    /api/my-listings/  -> user's own listings
+    """
+    serializer_class = ListingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Listing.objects.filter(seller=self.request.user).select_related("item")
+
+    def perform_create(self, serializer):
+        serializer.save(seller=self.request.user)

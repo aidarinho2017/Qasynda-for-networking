@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'coins',
     'participation',
     'comments',
-    'items'
+    'items',
+    'marketplace'
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True

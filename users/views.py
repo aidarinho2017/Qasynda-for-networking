@@ -112,7 +112,7 @@ def google_auth(request):
         user.set_unusable_password()
         user.save()
 
-        profile = UserProfile.objects.create(user=user, name=info.get("name", ""))
+        profile, _ = UserProfile.objects.get_or_create(user=user, defaults={"name": info.get("name", "")})
         created = True
 
     refresh = RefreshToken.for_user(user)
