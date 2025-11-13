@@ -37,7 +37,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*", ".vercel.app"]
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -54,7 +53,8 @@ INSTALLED_APPS = [
     'participation',
     'comments',
     'items',
-    'marketplace'
+    'marketplace',
+    'corsheaders'
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
